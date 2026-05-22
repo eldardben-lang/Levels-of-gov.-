@@ -1,0 +1,245 @@
+  {label:'Leader',m:'Mayor',p:'Premier',f:'Prime Minister'},
+  {label:'Meeting place',m:'City Hall',p:'Legislature',f:'Parliament — Ottawa'},
+  {label:'Representatives',m:'City Councillors',p:'MPPs / MLAs',f:'MPs (Members of Parliament)'},
+  {label:'Area served',m:'City or town',p:'One province or territory',f:'All of Canada'},
+  {label:'Key responsibility',m:'Roads, parks, garbage',p:'Education, healthcare',f:'Military, immigration'},
+  {label:'Laws called',m:'By-laws',p:'Provincial Acts',f:'Federal Acts / Bills'},
+  {label:'Funded by',m:'Property taxes',p:'Provincial taxes + federal transfers',f:'Federal income tax'},
+];
+
+const sortItems=[
+  {id:0,text:'🗑️ Garbage collection',level:'m'},
+  {id:1,text:'🏫 Public schools (K–12)',level:'p'},
+  {id:2,text:'✈️ Immigration',level:'f'},
+  {id:3,text:'🌳 Local parks',level:'m'},
+  {id:4,text:'🏥 Hospitals',level:'p'},
+  {id:5,text:'💵 Canadian currency',level:'f'},
+  {id:6,text:'🚒 Fire department',level:'m'},
+  {id:7,text:'🛣️ Provincial highways',level:'p'},
+  {id:8,text:'🪖 National military',level:'f'},
+];
+
+const vocab=[
+  {word:'Jurisdiction',def:'The area or subject over which a government has authority and power to make laws and decisions.'},
+  {word:'Municipality',def:'A city, town or village that has its own local government — led by a mayor and city council.'},
+  {word:'Mayor',def:'The elected head of a municipal (city or town) government — chosen by the people of that city.'},
+  {word:'Premier',def:'The elected head of a provincial government — like a Prime Minister but for one province.'},
+  {word:'Prime Minister',def:'The head of the federal (national) government of Canada — the country\'s top elected leader.'},
+  {word:'Parliament',def:'Canada\'s national law-making body in Ottawa, made up of the House of Commons and the Senate.'},
+  {word:'Confederation',def:'The union of provinces that created Canada in 1867, establishing how federal and provincial powers would be shared.'},
+  {word:'By-law',def:'A local law made by a municipal government that applies only within that specific city or town.'},
+];
+
+const questions=[
+  {q:'Which level of government is responsible for garbage collection in your neighbourhood?',opts:['Federal','Provincial','Municipal','Territorial'],ans:2,explain:'Garbage collection is a Municipal responsibility. Local governments handle the services that directly affect everyday life in your neighbourhood.'},
+  {q:'Who is the leader of a provincial government in Canada?',opts:['The Mayor','The Prime Minister','The Premier','The Governor General'],ans:2,explain:'The Premier is the head of a provincial government. Each of Canada\'s 10 provinces has its own Premier elected by the people of that province.'},
+  {q:'Which level of government controls immigration to Canada?',opts:['Municipal','Provincial','Federal','All three equally'],ans:2,explain:'Immigration is a Federal responsibility. The national government decides who can come to Canada because it affects ALL Canadians equally.'},
+  {q:'Where does the Federal Parliament of Canada meet?',opts:['Toronto, Ontario','Vancouver, BC','Montreal, Quebec','Ottawa, Ontario'],ans:3,explain:'Canada\'s Parliament is located in Ottawa, Ontario — the nation\'s capital. The Prime Minister and elected MPs from across all of Canada make national laws there.'},
+  {q:'Education (K–12 schools) in Canada is managed by which level?',opts:['Federal government','Municipal government','Provincial government','School boards only'],ans:2,explain:'Education is a Provincial responsibility. That\'s why school curricula can differ between provinces — Ontario, BC and Quebec each control their own education system.'},
+  {q:'A city council passes a rule that dogs must be on leashes in all public parks. This rule is called a…',opts:['Federal Act','Provincial Law','By-law','The Constitution'],ans:2,explain:'A by-law is a local law made by a municipal government. It only applies within that specific city or town — not across the whole province or country.'},
+  {q:'Which statement correctly matches all three government leaders to their level?',opts:['Mayor = Federal, Premier = Provincial, PM = Municipal','Mayor = Municipal, Premier = Federal, PM = Provincial','Mayor = Municipal, Premier = Provincial, PM = Federal','Mayor = Provincial, Premier = Federal, PM = Municipal'],ans:2,explain:'Mayor leads Municipal (city/town), Premier leads Provincial (province), and Prime Minister (PM) leads Federal (all of Canada). This is the correct match for all three levels!'},
+];
+
+function go(n){
+  document.getElementById('sl-'+cur).classList.remove('on');
+  cur=n;
+  document.getElementById('sl-'+n).classList.add('on');
+  updateDots();
+  if(n===6)buildCompTable();
+  if(n===7)initSort();
+  if(n===8)buildVocab();
+  if(n===9)renderQ();
+}
+
+function makeDots(){
+  for(let s=0;s<TOTAL;s++){
+    const el=document.getElementById('d'+s);if(!el)continue;
+    for(let i=0;i<TOTAL;i++){
+      const d=document.createElement('button');
+      d.className='dot'+(i===s?' active':i<s?' done':'');
+      d.onclick=(x=>()=>go(x))(i);
+      el.appendChild(d);
+    }
+  }
+  for(let s=1;s<TOTAL;s++){
+    const el=document.getElementById('c'+s);
+    if(el)el.textContent=(s+1)+' / '+TOTAL;
+  }
+}
+
+function updateDots(){
+  for(let s=0;s<TOTAL;s++){
+    const el=document.getElementById('d'+s);if(!el)continue;
+    el.querySelectorAll('.dot').forEach((d,i)=>{
+      d.className='dot'+(i===s?' active':i<s?' done':'');
+    });
+  }
+}
+
+function buildCompTable(){
+  const tb=document.getElementById('compTable');
+  if(tb.dataset.built)return;
+  tb.dataset.built='1';
+  // header
+  const thead=document.createElement('thead');
+  thead.innerHTML=`<tr>
+    <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:900;letter-spacing:1px;text-transform:uppercase;opacity:.55;border-bottom:1px solid rgba(255,255,255,.12)"></th>
+    <th style="padding:8px 10px;text-align:center;color:#5dcaa5;font-family:'Fredoka One',sans-serif;font-size:14px;border-bottom:1px solid rgba(39,174,96,.3)">🏘️ Municipal</th>
+    <th style="padding:8px 10px;text-align:center;color:#85b7eb;font-family:'Fredoka One',sans-serif;font-size:14px;border-bottom:1px solid rgba(46,134,222,.3)">🏛️ Provincial</th>
+    <th style="padding:8px 10px;text-align:center;color:#f09595;font-family:'Fredoka One',sans-serif;font-size:14px;border-bottom:1px solid rgba(231,76,60,.3)">🍁 Federal</th>
+  </tr>`;
+  tb.appendChild(thead);
+  const tbody=document.createElement('tbody');
+  compRows.forEach((r,i)=>{
+    const tr=document.createElement('tr');
+    tr.style.background=i%2===0?'rgba(255,255,255,.03)':'transparent';
+    tr.innerHTML=`
+      <td style="padding:8px 10px;font-size:11px;font-weight:900;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid rgba(255,255,255,.06)">${r.label}</td>
+      <td style="padding:8px 10px;text-align:center;font-size:12px;font-weight:700;color:#5dcaa5;border-bottom:1px solid rgba(255,255,255,.06)">${r.m}</td>
+      <td style="padding:8px 10px;text-align:center;font-size:12px;font-weight:700;color:#85b7eb;border-bottom:1px solid rgba(255,255,255,.06)">${r.p}</td>
+      <td style="padding:8px 10px;text-align:center;font-size:12px;font-weight:700;color:#f09595;border-bottom:1px solid rgba(255,255,255,.06)">${r.f}</td>`;
+    tbody.appendChild(tr);
+  });
+  tb.appendChild(tbody);
+}
+
+function initSort(){
+  const bank=document.getElementById('sortBank');
+  if(bank.dataset.init)return;
+  bank.dataset.init='1';
+  sortSel=null;sortedItems={};
+  sortItems.sort(()=>Math.random()-.5).forEach(item=>{
+    const el=document.createElement('div');
+    el.className='sort-item';el.id='si-'+item.id;
+    el.textContent=item.text;el.dataset.id=item.id;
+    el.onclick=()=>selectSort(item.id);
+    bank.appendChild(el);
+  });
+}
+
+function selectSort(id){
+  if(sortedItems[id])return;
+  document.querySelectorAll('.sort-item').forEach(e=>{
+    if(!sortedItems[e.dataset.id])e.classList.remove('sel');
+  });
+  const el=document.getElementById('si-'+id);
+  if(el){el.classList.add('sel');sortSel=id;}
+}
+
+function sortDrop(level){
+  if(sortSel===null){
+    document.getElementById('sortFb').textContent='👆 First tap an item from the bank above!';
+    document.getElementById('sortFb').style.color='rgba(255,255,255,.55)';
+    return;
+  }
+  const item=sortItems.find(i=>i.id===sortSel);
+  if(!item)return;
+  const el=document.getElementById('si-'+sortSel);
+  const fb=document.getElementById('sortFb');
+  if(item.level===level){
+    sortedItems[sortSel]=level;
+    el.classList.remove('sel');
+    el.classList.add('placed-'+level);
+    document.getElementById('sortZone-'+level).appendChild(el);
+    const correct=Object.keys(sortedItems).length;
+    fb.textContent=correct===sortItems.length?'🎉 Perfect! All sorted correctly!':'✅ Correct! Keep going!';
+    fb.style.color='#5dcaa5';
+  } else {
+    el.classList.add('shake');
+    setTimeout(()=>el.classList.remove('shake','sel'),400);
+    fb.textContent='❌ Not quite — try a different level!';
+    fb.style.color='#f09595';
+  }
+  sortSel=null;
+}
+
+function resetSort(){
+  sortedItems={};sortSel=null;
+  const bank=document.getElementById('sortBank');
+  bank.innerHTML='';delete bank.dataset.init;
+  ['m','p','f'].forEach(l=>document.getElementById('sortZone-'+l).innerHTML='');
+  document.getElementById('sortFb').textContent='';
+  initSort();
+}
+
+function buildVocab(){
+  const g=document.getElementById('vocabGrid');
+  if(g.dataset.built)return;g.dataset.built='1';
+  vocab.forEach(v=>{
+    const c=document.createElement('div');c.className='vcard';
+    c.innerHTML=`<div class="vf">
+      <div style="font-family:'Fredoka One',sans-serif;font-size:14px;color:#e74c3c">${v.word}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:5px">Tap to flip →</div>
+    </div>
+    <div class="vb" style="font-size:12px;color:rgba(255,255,255,.65);line-height:1.6">
+      ${v.def}
+      <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:5px">Tap to flip back</div>
+    </div>`;
+    c.onclick=()=>{
+      const was=c.classList.contains('flipped');
+      c.classList.toggle('flipped');
+      flipped=was?Math.max(0,flipped-1):flipped+1;
+      document.getElementById('flippedCount').textContent=flipped;
+      document.getElementById('progBar').style.width=Math.round(flipped/vocab.length*100)+'%';
+    };
+    g.appendChild(c);
+  });
+}
+
+function resetVocab(){
+  flipped=0;
+  document.getElementById('flippedCount').textContent='0';
+  document.getElementById('progBar').style.width='0%';
+  document.querySelectorAll('.vcard').forEach(c=>c.classList.remove('flipped'));
+}
+
+function renderQ(){
+  if(qIdx>=questions.length){
+    document.getElementById('qText').textContent='Quiz complete!';
+    document.getElementById('qOpts').innerHTML='';
+    document.getElementById('qFb').textContent='Score: '+qScore+'/'+questions.length+' — Civics champion!';
+    document.getElementById('qFb').style.color='#5dcaa5';
+    document.getElementById('nqBtn').style.display='none';
+    document.getElementById('finalScore').textContent=qScore+'/'+questions.length;
+    setTimeout(()=>go(10),2200);return;
+  }
+  const q=questions[qIdx];
+  document.getElementById('qProg').textContent='Question '+(qIdx+1)+' of '+questions.length;
+  document.getElementById('qText').textContent=q.q;
+  document.getElementById('qFb').textContent='';
+  document.getElementById('nqBtn').style.display='none';
+  qAns=false;
+  const el=document.getElementById('qOpts');el.innerHTML='';
+  q.opts.forEach((o,i)=>{
+    const b=document.createElement('button');b.className='qbtn';b.textContent=o;
+    b.onclick=()=>ansQ(i,b);el.appendChild(b);
+  });
+}
+
+function ansQ(i,btn){
+  if(qAns)return;qAns=true;
+  const q=questions[qIdx];
+  document.querySelectorAll('.qbtn')[q.ans].classList.add('correct');
+  const fb=document.getElementById('qFb');
+  if(i===q.ans){qScore++;fb.textContent='⭐ Correct! Well done!';fb.style.color='#5dcaa5';}
+  else{btn.classList.add('wrong');fb.textContent='❌ Not quite — check the green answer!';fb.style.color='#f09595';}
+  document.getElementById('nqBtn').style.display='inline-flex';
+}
+
+function nextQ(){qIdx++;renderQ();}
+
+function restartAll(){
+  qIdx=0;qScore=0;qAns=false;flipped=0;sortSel=null;sortedItems={};
+  const vg=document.getElementById('vocabGrid');if(vg){vg.innerHTML='';delete vg.dataset.built;}
+  const sb=document.getElementById('sortBank');if(sb){sb.innerHTML='';delete sb.dataset.init;}
+  ['m','p','f'].forEach(l=>{const z=document.getElementById('sortZone-'+l);if(z)z.innerHTML='';});
+  const ct=document.getElementById('compTable');if(ct){ct.innerHTML='';delete ct.dataset.built;}
+  document.getElementById('flippedCount').textContent='0';
+  document.getElementById('progBar').style.width='0%';
+  go(0);
+}
+
+makeDots();
+</script>
+</body>
+</html>
